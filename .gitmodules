@@ -1,0 +1,3 @@
+[submodule "Kawaii_Engine"]
+	path = Kawaii_Engine
+	url = https://github.com/Mathieu-Lala/Kawaii_Engine.git
