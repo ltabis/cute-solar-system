@@ -8,6 +8,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
   endif()
 endif()
 
+add_subdirectory(dependencies/Kawaii_Engine)
+
 # compiles the files defined by SOURCES to generante the executable defined by EXEC
 add_executable(cute_solar_system
     src/main.cpp
