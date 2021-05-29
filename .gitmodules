@@ -1,0 +1,3 @@
+[submodule "dependencies/Kawaii_Engine"]
+	path = dependencies/Kawaii_Engine
+	url = https://github.com/Mathieu-Lala/Kawaii_Engine.git
