@@ -35,7 +35,7 @@
         {
             "label": "App - Debug - Run",
             "type": "shell",
-            "command": "./bin/app",
+            "command": "./bin/cute_solar_system",
             "args": [],
             "options": {
                 "cwd": "install/Debug/"
@@ -79,7 +79,7 @@
         {
             "label": "App - Release - Run",
             "type": "shell",
-            "command": "./bin/app",
+            "command": "./bin/cute_solar_system",
             "options": {
                 "cwd": "install/Release/"
             },
