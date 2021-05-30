@@ -3,12 +3,12 @@ project(cute-solar-system CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-  option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
-  if(ENABLE_BUILD_WITH_TIME_TRACE)
-    target_compile_options(project_options INTERFACE -ftime-trace)
-  endif()
-endif()
+# if(CMAKE_CXX_COMPILCMake Error: CMAKE_g++-10_COMPILER not set, after EnableLanguageER_ID MATCHES ".*Clang")
+#   option(ENABLE_BUILD_WITH_TIME_TRACE "Enable -ftime-trace to generate time tracing .json files on clang" OFF)
+#   if(ENABLE_BUILD_WITH_TIME_TRACE)
+#     target_compile_options(project_options INTERFACE -ftime-trace)
+#   endif()
+# endif()
 
 add_subdirectory(dependencies/Kawaii_Engine)
 
