@@ -16,6 +16,11 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "options": {
+                "env": {
+                    "CXX": "g++-10"
+                }
+            },
         },
         {
             "label": "App - Debug - Build",
@@ -31,6 +36,11 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "options": {
+                "env": {
+                    "CXX": "g++-10"
+                }
+            },
         },
         {
             "label": "App - Debug - Run",
@@ -38,7 +48,10 @@
             "command": "./bin/cute_solar_system",
             "args": [],
             "options": {
-                "cwd": "install/Debug/"
+                "cwd": "install/Debug/",
+                "env": {
+                    "CXX": "g++-10"
+                }
             },
             "group": {
                 "kind": "build",
@@ -60,6 +73,11 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "options": {
+                "env": {
+                    "CXX": "g++-10"
+                }
+            },
         },
         {
             "label": "App - Release - Build",
@@ -75,13 +93,21 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "options": {
+                "env": {
+                    "CXX": "g++-10"
+                }
+            },
         },
         {
             "label": "App - Release - Run",
             "type": "shell",
             "command": "./bin/cute_solar_system",
             "options": {
-                "cwd": "install/Release/"
+                "cwd": "install/Release/",
+                "env": {
+                    "CXX": "g++-10"
+                }
             },
             "args": [],
             "group": {
