@@ -25,7 +25,6 @@ constexpr auto cube_colors = std::to_array({
     1.0f, 1.0f, 0.0f, 1.0f, // Point G 6
     1.0f, 1.0f, 1.0f, 1.0f // Point H 7
 });
-
 constexpr auto cube_indices = std::to_array({
     /*Above ABC,BCD*/
     0u, 1u, 2u, 1u, 2u, 3u,
@@ -81,12 +80,13 @@ int main()
         for (int y = 0; y != 5; y++) {
             for (int x = 0; x != 5; x++) {
                 const auto cube = world.create();
+                world.emplace<kawe::Position3f>(cube, glm::vec3{x, 0, y});
+                world.emplace<kawe::Scale3f>(cube, glm::vec3{0.5, 0.5, 0.5});
+                world.emplace<kawe::Collider>(cube);
                 kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(
                     world, cube, data::cube_positions, 3);
                 kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(world, cube, data::cube_colors, 4);
                 kawe::Render::EBO::emplace(world, cube, data::cube_indices);
-                world.emplace<kawe::Position3f>(cube, glm::vec3{x, 0, y});
-                world.emplace<kawe::Scale3f>(cube, glm::vec3{0.5, 0.5, 0.5});
             }
         }
 
@@ -95,21 +95,22 @@ int main()
         kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(world, e, data::cube_colors, 4);
         kawe::Render::EBO::emplace(world, e, data::cube_indices);
         world.emplace<kawe::Position3f>(e, glm::vec3{0, 1, 0});
+        world.emplace<kawe::Collider>(e);
         world.emplace<kawe::Name>(e, "Player");
 
         player = std::make_shared<Player>(e, world);
         world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&Player::on_key_pressed>(
             player.get());
 
-        const auto model = world.create();
-
-        kawe::Mesh::emplace(world, model, "./asset/models/viking_room.obj");
-        world.emplace<kawe::Position3f>(model, glm::vec3(0.0f));
+        //        const auto model = world.create();
+        //
+        //        kawe::Mesh::emplace(world, model, "./asset/models/viking_room.obj");
+        //        world.emplace<kawe::Position3f>(model, glm::vec3(0.0f));
     };
 
     engine.on_imgui = []() {
-        ImGui::Begin("hello");
-        ImGui::End();
+        // ImGui::Begin("hello");
+        // ImGui::End();
     };
 
     engine.start();
