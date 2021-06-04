@@ -1,6 +1,8 @@
 #include "Engine.hpp"
 #include "component.hpp"
 
+#include <numbers>
+
 namespace data {
 
 // clang-format off
@@ -43,6 +45,60 @@ constexpr auto cube_indices = std::to_array({
 
 } // namespace data
 
+void SolidSphere(entt::registry &world, float radius, unsigned int rings, unsigned int sectors)
+{
+    std::vector<GLfloat> sphere_vertices;
+    std::vector<GLfloat> sphere_normals;
+    std::vector<GLfloat> sphere_texcoords;
+    std::vector<std::uint32_t> sphere_indices;
+
+    const auto R = 1.0f / static_cast<float>(rings - 1);
+    const auto S = 1.0f / static_cast<float>(sectors - 1);
+
+    sphere_vertices.resize(rings * sectors * 3);
+    sphere_normals.resize(rings * sectors * 3);
+    sphere_texcoords.resize(rings * sectors * 2);
+    auto v = sphere_vertices.begin();
+    auto n = sphere_normals.begin();
+    auto t = sphere_texcoords.begin();
+    for (auto r = 0u; r < rings; r++)
+        for (auto s = 0u; s < sectors; s++) {
+            const auto y = std::sin(
+                -std::numbers::pi_v<float> / 2.0f + std::numbers::pi_v<float> * static_cast<float>(r) * R);
+            const auto x = std::cos(2.0f * std::numbers::pi_v<float> * static_cast<float>(s) * S)
+                           * std::sin(std::numbers::pi_v<float> * static_cast<float>(r) * R);
+            const auto z = std::sin(2.0f * std::numbers::pi_v<float> * static_cast<float>(s) * S)
+                           * std::sin(std::numbers::pi_v<float> * static_cast<float>(r) * R);
+
+            *t++ = static_cast<float>(s) * S;
+            *t++ = static_cast<float>(r) * R;
+
+            *v++ = x * radius;
+            *v++ = y * radius;
+            *v++ = z * radius;
+
+            *n++ = x;
+            *n++ = y;
+            *n++ = z;
+        }
+
+    sphere_indices.resize(rings * sectors * 4);
+    auto i = sphere_indices.begin();
+    for (auto r = 0u; r < rings; r++)
+        for (auto s = 0u; s < sectors; s++) {
+            *i++ = r * sectors + (s);
+            *i++ = r * sectors + (s + 1);
+            *i++ = (r + 1) * sectors + (s + 1);
+            *i++ = (r + 1) * sectors + (s);
+        }
+
+    const auto e = world.create();
+
+    kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(world, e, sphere_vertices, 3);
+    kawe::Render::EBO::emplace(world, e, sphere_indices);
+    world.get<kawe::Render::VAO>(e).mode = kawe::Render::VAO::DisplayMode::TRIANGLE_STRIP_ADJACENCY;
+}
+
 int main()
 {
     kawe::Engine engine{};
@@ -53,36 +109,50 @@ int main()
 
         auto on_key_pressed(const kawe::Pressed<kawe::Key> &key)
         {
+            std::optional<double> x{};
+            std::optional<double> y{};
+            std::optional<double> z{};
+
             switch (key.source.keycode) {
-            case kawe::Key::Code::KEY_E:
-                world.emplace_or_replace<kawe::Velocity3f>(entity, glm::vec3{0.5, 0.0, 0.0});
-                break;
-            case kawe::Key::Code::KEY_S:
-                world.emplace_or_replace<kawe::Velocity3f>(entity, glm::vec3{0.0, 0.0, 0.5});
-                break;
-            case kawe::Key::Code::KEY_F:
-                world.emplace_or_replace<kawe::Velocity3f>(entity, glm::vec3{0.0, 0.0, -0.5});
-                break;
-            case kawe::Key::Code::KEY_D:
-                world.emplace_or_replace<kawe::Velocity3f>(entity, glm::vec3{-0.5, 0.0, 0.0});
-                break;
-            case kawe::Key::Code::KEY_SPACE:
-                world.emplace_or_replace<kawe::Velocity3f>(entity, glm::vec3{0.0, 3.0, 0.0});
-                break;
+            case kawe::Key::Code::KEY_E: x = 0.5; break;
+            case kawe::Key::Code::KEY_S: z = 0.5; break;
+            case kawe::Key::Code::KEY_F: z = -0.5; break;
+            case kawe::Key::Code::KEY_D: x = -0.5; break;
+            case kawe::Key::Code::KEY_SPACE: y = 3.0; break;
             default: break;
+            }
+            if (x.has_value() || y.has_value() || z.has_value()) {
+                const auto default_v =
+                    kawe::Velocity3f{glm::dvec3{x.value_or(0.0), y.value_or(0.0), z.value_or(0.0)}};
+                const auto vel = world.try_get<kawe::Velocity3f>(entity);
+
+                if (vel == nullptr) {
+                    world.emplace_or_replace<kawe::Velocity3f>(entity, default_v);
+                } else {
+                    world.emplace_or_replace<kawe::Velocity3f>(
+                        entity,
+                        glm::dvec3{
+                            x.has_value() ? x.value() : vel->component.x,
+                            y.has_value() ? y.value() : vel->component.y,
+                            z.has_value() ? z.value() : vel->component.z,
+                        });
+                }
             }
         }
     };
 
     std::shared_ptr<Player> player;
 
-    engine.on_create = [&player](entt::registry &world) {
+    entt::registry *my_world;
+
+    engine.on_create = [&my_world, &player](entt::registry &world) {
+        my_world = &world;
         for (int y = 0; y != 5; y++) {
             for (int x = 0; x != 5; x++) {
                 const auto cube = world.create();
                 world.emplace<kawe::Position3f>(cube, glm::vec3{x, 0, y});
                 world.emplace<kawe::Scale3f>(cube, glm::vec3{0.5, 0.5, 0.5});
-                world.emplace<kawe::Collider>(cube);
+                if ((x & 1) || (y & 1)) world.emplace<kawe::Collider>(cube);
                 kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(
                     world, cube, data::cube_positions, 3);
                 kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(world, cube, data::cube_colors, 4);
@@ -98,19 +168,40 @@ int main()
         world.emplace<kawe::Collider>(e);
         world.emplace<kawe::Name>(e, "Player");
 
+#ifdef TEST_THE_ENTITY_TREE
+        const auto i = world.create();
+        world.emplace<kawe::Parent>(i, e);
+        world.emplace<kawe::Name>(i, "I");
+        world.get_or_emplace<kawe::Children>(e).component.push_back(i);
+        const auto ii = world.create();
+        world.emplace<kawe::Parent>(ii, i);
+        world.emplace<kawe::Name>(ii, "II");
+        world.get_or_emplace<kawe::Children>(i).component.push_back(ii);
+#endif
+
         player = std::make_shared<Player>(e, world);
         world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&Player::on_key_pressed>(
             player.get());
 
-        //        const auto model = world.create();
-        //
-        //        kawe::Mesh::emplace(world, model, "./asset/models/viking_room.obj");
-        //        world.emplace<kawe::Position3f>(model, glm::vec3(0.0f));
+        SolidSphere(world, 1, 10, 10);
+
+#ifdef TEST_THE_MESH_LOADER
+        const auto model = world.create();
+
+        kawe::Mesh::emplace(world, model, "./asset/models/viking_room.obj");
+        world.emplace<kawe::Position3f>(model, glm::vec3(0.0f));
+#endif
     };
 
-    engine.on_imgui = []() {
-        // ImGui::Begin("hello");
-        // ImGui::End();
+    engine.on_imgui = [&my_world]() {
+        ImGui::Begin("Cute Solar System - Control Panel");
+        const auto &in = my_world->ctx<kawe::State *>()->clear_color;
+        float temp[4] = {in.r, in.g, in.b, in.a};
+        if (ImGui::ColorEdit4("clear color", temp)) {
+            my_world->ctx<kawe::State *>()->clear_color = {temp[0], temp[1], temp[2], temp[3]};
+        }
+
+        ImGui::End();
     };
 
     engine.start();
