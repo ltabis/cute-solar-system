@@ -97,6 +97,7 @@ void SolidSphere(entt::registry &world, float radius, unsigned int rings, unsign
     kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(world, e, sphere_vertices, 3);
     kawe::Render::EBO::emplace(world, e, sphere_indices);
     world.get<kawe::Render::VAO>(e).mode = kawe::Render::VAO::DisplayMode::TRIANGLE_STRIP_ADJACENCY;
+    world.emplace<kawe::Position3f>(e, glm::vec3{0.0f, 2.0f, 3.0f});
 }
 
 int main()
@@ -147,6 +148,8 @@ int main()
 
     engine.on_create = [&my_world, &player](entt::registry &world) {
         my_world = &world;
+
+        const auto map = world.create();
         for (int y = 0; y != 5; y++) {
             for (int x = 0; x != 5; x++) {
                 const auto cube = world.create();
@@ -157,6 +160,8 @@ int main()
                     world, cube, data::cube_positions, 3);
                 kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(world, cube, data::cube_colors, 4);
                 kawe::Render::EBO::emplace(world, cube, data::cube_indices);
+                world.emplace<kawe::Parent>(cube, map);
+                world.get_or_emplace<kawe::Children>(map).component.push_back(cube);
             }
         }
 
@@ -168,16 +173,6 @@ int main()
         world.emplace<kawe::Collider>(e);
         world.emplace<kawe::Name>(e, "Player");
 
-#ifdef TEST_THE_ENTITY_TREE
-        const auto i = world.create();
-        world.emplace<kawe::Parent>(i, e);
-        world.emplace<kawe::Name>(i, "I");
-        world.get_or_emplace<kawe::Children>(e).component.push_back(i);
-        const auto ii = world.create();
-        world.emplace<kawe::Parent>(ii, i);
-        world.emplace<kawe::Name>(ii, "II");
-        world.get_or_emplace<kawe::Children>(i).component.push_back(ii);
-#endif
 
         player = std::make_shared<Player>(e, world);
         world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&Player::on_key_pressed>(
@@ -185,12 +180,18 @@ int main()
 
         SolidSphere(world, 1, 10, 10);
 
-#ifdef TEST_THE_MESH_LOADER
+        //#ifdef TEST_THE_MESH_LOADER
         const auto model = world.create();
 
         kawe::Mesh::emplace(world, model, "./asset/models/viking_room.obj");
-        world.emplace<kawe::Position3f>(model, glm::vec3(0.0f));
-#endif
+        kawe::Texture2D::emplace(
+            world, model, *world.ctx<kawe::ResourceLoader *>(), "./asset/textures/viking_room.png");
+        const auto vbo = world.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(model);
+        const auto index_size = vbo.vertices.size() / vbo.stride_size;
+        kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(
+            world, model, std::vector<float>(index_size * 4, 1.0f), 4);
+        world.emplace<kawe::Position3f>(model, glm::vec3(3.0f, 2.0f, 0.0f));
+        //#endif
     };
 
     engine.on_imgui = [&my_world]() {
