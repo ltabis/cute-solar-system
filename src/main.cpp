@@ -6,14 +6,14 @@
 
 int main()
 {
-    css::Universe univers {};
+    css::Universe universe{};
     kawe::Engine engine{};
 
     std::shared_ptr<css::Player> player;
 
     entt::registry *my_world;
 
-    engine.on_create = [&univers, &my_world, &player](entt::registry &world) {
+    engine.on_create = [&universe, &my_world, &player](entt::registry &world) {
         my_world = &world;
 
         // const auto map = world.create();
@@ -30,7 +30,7 @@ int main()
             player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
-        auto earth = univers.add_body(
+        auto earth = universe.add_body(
             world,
             "Earth",
             "./asset/models/Earth.obj",
@@ -39,7 +39,7 @@ int main()
             0.01f
         );
 
-        auto asteroid = univers.add_body(
+        auto asteroid = universe.add_body(
             world,
             "Asteroid",
             "./asset/models/Asteroid_Small_6X.obj",
