@@ -1,4 +1,4 @@
-#include "celestial-bodies/CelestialBody.hpp"
+#include "Universe.hpp"
 #include "component.hpp"
 #include "Player.hpp"
 
@@ -6,13 +6,14 @@
 
 int main()
 {
+    css::Universe univers {};
     kawe::Engine engine{};
 
     std::shared_ptr<css::Player> player;
 
     entt::registry *my_world;
 
-    engine.on_create = [&my_world, &player](entt::registry &world) {
+    engine.on_create = [&univers, &my_world, &player](entt::registry &world) {
         my_world = &world;
 
         // const auto map = world.create();
@@ -29,18 +30,25 @@ int main()
             player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
-        const auto model = world.create();
+        auto earth = univers.add_body(
+            world,
+            "Earth",
+            "./asset/models/Earth.obj",
+            "./asset/textures/Planet_4K.jpg",
+            glm::vec3(0.f),
+            0.01f
+        );
 
-        kawe::Mesh::emplace(world, model, "./asset/models/Earth.obj");
-        kawe::Texture2D::emplace(
-            world, model, *world.ctx<kawe::ResourceLoader *>(), "./asset/textures/Planet_4K.jpg");
-        const auto vbo = world.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(model);
-        const auto index_size = vbo.vertices.size() / vbo.stride_size;
-        kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(
-            world, model, std::vector<float>(index_size * 4, 1.0f), 4);
-        world.emplace<kawe::Scale3f>(model, glm::vec3(0.01f, 0.01f, 0.01f));
-        world.emplace<kawe::Position3f>(model, glm::vec3(3.0f, 2.0f, 0.0f));
-        //#endif
+        auto asteroid = univers.add_body(
+            world,
+            "Asteroid",
+            "./asset/models/Asteroid_Small_6X.obj",
+            "./asset/textures/Aster_Small_1_Color.png",
+            glm::vec3(0.f),
+            0.01f
+        );
+
+        spdlog::info("bodies generated: {} & {}", earth, asteroid);
     };
 
     engine.on_imgui = [&my_world]() {
