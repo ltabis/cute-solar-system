@@ -2,11 +2,16 @@
 
 #include "celestial-bodies/CelestialBodyComponents.hpp"
 
+#define GRAVITATIONAL_CONSTANT 0.01f
+
 namespace css
 {
 
 class Universe {
 public:
+
+    Universe(entt::registry &world) : m_World { world } {}
+
     auto add_body(
         entt::registry &world,
         const std::string &name,
@@ -37,8 +42,29 @@ public:
         m_Bodies.push_back(body_model);
 
         return body_model;
-   }
+    }
+
+    auto on_update_bodies([[ maybe_unused ]] const kawe::TimeElapsed &e) -> void {
+
+        for ([[ maybe_unused ]] const auto &body : m_Bodies)
+            for ([[ maybe_unused ]] const auto &other : m_Bodies) {
+                // const auto body_position = m_World->get<kawe::Position3f>(body).component;
+                // const auto body_mass = m_World->get<CelestialBody::MassF>(body).mass;
+                // const auto other_position = m_World->get<kawe::Position3f>(other).component;
+                // const auto other_mass = m_World->get<CelestialBody::MassF>(other).mass;
+
+                // const float sqr_dist = glm::sqrt((body_position - other_position).length());
+                // const auto force_dir = glm::normalize((body_position - other_position));
+                // const auto force = 1; // force_dir * GRAVITATIONAL_CONSTANT * body_mass * other_mass / sqr_dist;
+                // const auto acceleration = force / body_mass;
+
+                // auto body_velocity = m_World->get<kawe::Velocity3f>(body);
+                // body_velocity += acceleration * e.elapsed;
+            }
+    }
+
 private:
+    entt::registry &m_World;
     std::vector<entt::entity> m_Bodies;
 };
 

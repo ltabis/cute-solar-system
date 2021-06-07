@@ -24,7 +24,7 @@ using SizeF = Size<float>;
 
 struct LifeTime {
     // TODO: to replace by std::chrono.
-    std::size_t size;
+    std::size_t lifetime;
 };
 
 }

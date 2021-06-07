@@ -6,15 +6,19 @@
 
 int main()
 {
-    css::Universe universe{};
+
     kawe::Engine engine{};
 
     std::shared_ptr<css::Player> player;
+    std::shared_ptr<css::Universe> universe;
 
     entt::registry *my_world;
 
-    engine.on_create = [&universe, &my_world, &player](entt::registry &world) {
+    engine.on_create = [&my_world, &universe, &player](entt::registry &world) {
         my_world = &world;
+
+        universe = std::make_shared<css::Universe>(world);
+        world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::Universe::on_update_bodies>(universe.get());
 
         // const auto map = world.create();
         // world.emplace<kawe::Parent>(cube, map);
@@ -30,7 +34,7 @@ int main()
             player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
-        auto earth = universe.add_body(
+        auto earth = universe->add_body(
             world,
             "Earth",
             "./asset/models/Earth.obj",
@@ -39,13 +43,13 @@ int main()
             0.01f
         );
 
-        auto asteroid = universe.add_body(
+        auto asteroid = universe->add_body(
             world,
             "Asteroid",
             "./asset/models/Asteroid_Small_6X.obj",
             "./asset/textures/Aster_Small_1_Color.png",
             glm::vec3(0.f),
-            0.01f
+            1
         );
 
         spdlog::info("bodies generated: {} & {}", earth, asteroid);
