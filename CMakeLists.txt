@@ -11,6 +11,7 @@ add_subdirectory(dependencies/Kawaii_Engine)
 
 # compiles the files defined by SOURCES to generante the executable defined by EXEC
 add_executable(cute_solar_system src/main.cpp)
+target_include_directories(cute_solar_system PUBLIC include)
 target_link_libraries(cute_solar_system PRIVATE kawaii_engine)
 target_compile_features(cute_solar_system PRIVATE cxx_std_20)
 install(TARGETS cute_solar_system DESTINATION bin)
