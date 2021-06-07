@@ -25,7 +25,7 @@ int main()
         // world.get_or_emplace<kawe::Children>(map).component.push_back(cube);
 
         const auto player_id = world.create();
-        world.emplace<kawe::Position3f>(player_id, glm::vec3{0, 1, 0});
+        world.emplace<kawe::Position3f>(player_id, glm::vec3{0, 10, 0});
         world.emplace<kawe::Collider>(player_id);
         world.emplace<kawe::Name>(player_id, "Player");
 
@@ -34,34 +34,35 @@ int main()
             player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
-        auto earth = universe->add_body(
+        [[ maybe_unused ]] auto earth = universe->add_body(
             world,
             "Earth",
             "./asset/models/Earth.obj",
             "./asset/textures/Planet_4K.jpg",
             glm::vec3(0.f),
-            0.01f
+            glm::vec3(0.f),
+            0.01f,
+            100.f
         );
 
-        auto asteroid = universe->add_body(
+        [[ maybe_unused ]] auto asteroid = universe->add_body(
             world,
             "Asteroid",
             "./asset/models/Asteroid_Small_6X.obj",
             "./asset/textures/Aster_Small_1_Color.png",
-            glm::vec3(0.f),
+            glm::vec3(3.f, 0.f, 0.f),
+            glm::vec3(0.f, .1f, 0.f),
             1
         );
-
-        spdlog::info("bodies generated: {} & {}", earth, asteroid);
     };
 
     engine.on_imgui = [&my_world]() {
         ImGui::Begin("Cute Solar System - Control Panel");
         const auto &in = my_world->ctx<kawe::State *>()->clear_color;
         float temp[4] = {in.r, in.g, in.b, in.a};
-        if (ImGui::ColorEdit4("clear color", temp)) {
+
+        if (ImGui::ColorEdit4("clear color", temp))
             my_world->ctx<kawe::State *>()->clear_color = {temp[0], temp[1], temp[2], temp[3]};
-        }
 
         ImGui::End();
     };
