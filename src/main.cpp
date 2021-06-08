@@ -97,7 +97,7 @@ void SolidSphere(entt::registry &world, float radius, unsigned int rings, unsign
     kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(world, e, sphere_vertices, 3);
     kawe::Render::EBO::emplace(world, e, sphere_indices);
     world.get<kawe::Render::VAO>(e).mode = kawe::Render::VAO::DisplayMode::TRIANGLE_STRIP_ADJACENCY;
-    world.emplace<kawe::Position3f>(e, glm::vec3{0.0f, 2.0f, 3.0f});
+    world.emplace_or_replace<kawe::Position3f>(e, glm::vec3{0.0f, 2.0f, 3.0f});
 }
 
 int main()
@@ -178,7 +178,7 @@ int main()
         world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&Player::on_key_pressed>(
             player.get());
 
-        SolidSphere(world, 1, 10, 10);
+        SolidSphere(world, 1, 20, 20);
 
         //#ifdef TEST_THE_MESH_LOADER
         const auto model = world.create();
@@ -186,10 +186,7 @@ int main()
         kawe::Mesh::emplace(world, model, "./asset/models/viking_room.obj");
         kawe::Texture2D::emplace(
             world, model, *world.ctx<kawe::ResourceLoader *>(), "./asset/textures/viking_room.png");
-        const auto vbo = world.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(model);
-        const auto index_size = vbo.vertices.size() / vbo.stride_size;
-        kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(
-            world, model, std::vector<float>(index_size * 4, 1.0f), 4);
+        world.emplace<kawe::FillColor>(model, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
         world.emplace<kawe::Position3f>(model, glm::vec3(3.0f, 2.0f, 0.0f));
         //#endif
     };
