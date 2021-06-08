@@ -6,7 +6,6 @@
 
 int main()
 {
-
     kawe::Engine engine{};
 
     std::shared_ptr<css::Player> player;
@@ -18,7 +17,8 @@ int main()
         my_world = &world;
 
         universe = std::make_shared<css::Universe>(world);
-        world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::Universe::on_update_bodies>(universe.get());
+        world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
+            universe.get());
 
         // const auto map = world.create();
         // world.emplace<kawe::Parent>(cube, map);
@@ -34,26 +34,22 @@ int main()
             player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
-        [[ maybe_unused ]] auto earth = universe->add_body(
-            world,
+        [[maybe_unused]] auto earth = universe->add_body(
             "Earth",
             "./asset/models/Earth.obj",
             "./asset/textures/Planet_4K.jpg",
             glm::vec3(0.f),
             glm::vec3(0.f),
             0.01f,
-            100.f
-        );
+            100.f);
 
-        [[ maybe_unused ]] auto asteroid = universe->add_body(
-            world,
+        [[maybe_unused]] auto asteroid = universe->add_body(
             "Asteroid",
             "./asset/models/Asteroid_Small_6X.obj",
             "./asset/textures/Aster_Small_1_Color.png",
             glm::vec3(3.f, 0.f, 0.f),
             glm::vec3(0.f, .1f, 0.f),
-            1
-        );
+            1);
     };
 
     engine.on_imgui = [&my_world]() {

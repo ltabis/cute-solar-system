@@ -2,11 +2,9 @@
 
 #include "Engine.hpp"
 
-namespace css
-{
+namespace css {
 
-namespace CelestialBody
-{
+namespace CelestialBody {
 
 template<typename T>
 struct Mass {
@@ -27,6 +25,6 @@ struct LifeTime {
     std::size_t lifetime;
 };
 
-}
+} // namespace CelestialBody
 
-}
+} // namespace css
