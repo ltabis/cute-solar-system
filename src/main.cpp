@@ -2,7 +2,8 @@
 #include "component.hpp"
 #include "Player.hpp"
 
-#include <numbers>
+#include "primitives/Line.hpp"
+#include "primitives/Sphere.hpp"
 
 int main()
 {
@@ -28,6 +29,10 @@ int main()
         world.emplace<kawe::Position3f>(player_id, glm::vec3{0, 10, 0});
         world.emplace<kawe::Collider>(player_id);
         world.emplace<kawe::Name>(player_id, "Player");
+
+        // creating a sphere and a line.
+        // create_sphere(world, 1, 10, 10);
+        create_line(world, glm::vec3(0.f, -50.f, 0.f), glm::vec3(0.f, 50.f, 0.f));
 
         player = std::make_shared<css::Player>(player_id, world);
         world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&css::Player::on_key_pressed>(

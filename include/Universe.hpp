@@ -2,11 +2,12 @@
 
 #include "celestial-bodies/CelestialBodyComponents.hpp"
 
-#define GRAVITATIONAL_CONSTANT 0.000001
+using namespace entt::literals;
 
 namespace css
 {
 
+// TODO: convert this class into a component.
 class Universe {
 public:
 
@@ -29,7 +30,7 @@ public:
         // loading texture if one is provided
         if (!texture_path.empty())
             kawe::Texture2D::emplace(
-                world, body_model, *world.ctx<kawe::ResourceLoader *>(), "./asset/textures/Planet_4K.jpg");
+                world, body_model, "./asset/textures/Planet_4K.jpg");
 
         const auto vbo = world.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(body_model);
         const auto index_size = vbo.vertices.size() / vbo.stride_size;
@@ -41,6 +42,8 @@ public:
         world.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
         world.emplace<kawe::Position3f>(body_model, position);
         world.emplace<kawe::Velocity3f>(body_model, initial_velocity);
+        CelestialBody::OrbitVizualiser::emplace(world, body_model, 10);
+        world.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
 
         m_Bodies.push_back(body_model);
 
