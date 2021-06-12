@@ -2,7 +2,7 @@
 
 #include "Engine.hpp"
 
-constexpr auto gravitational_constant = 0.000001f;
+constexpr auto gravitational_constant = 0.000001;
 
 using namespace entt::literals;
 
@@ -68,14 +68,14 @@ struct OrbitVizualiser {
                         continue;
 
                     const auto body_position = world.get<kawe::Position3f>(visualizer.parent).component;
-                    const auto body_mass = world.get<CelestialBody::MassF>(visualizer.parent).mass;
+                    const auto body_mass = static_cast<double>(world.get<CelestialBody::MassF>(visualizer.parent).mass);
                     const auto other_position = world.get<kawe::Position3f>(other).component;
-                    const auto other_mass = world.get<CelestialBody::MassF>(other).mass;
+                    const auto other_mass = static_cast<double>(world.get<CelestialBody::MassF>(other).mass);
 
-                    const float sqr_dist = glm::pow((body_position - other_position).length(), 2);
-                    const glm::vec3 force_dir = glm::normalize((body_position - other_position));
+                    const auto sqr_dist = glm::pow((body_position - other_position).length(), 2);
+                    const auto force_dir = glm::normalize(body_position - other_position);
                     const auto force = force_dir * gravitational_constant * body_mass * other_mass / sqr_dist;
-                    const auto acceleration = force / body_mass;
+                    [[maybe_unused]] const auto acceleration = force / body_mass;
 
                     // updating the current body's velocity.
                     // visualizer.velocity.component += acceleration;
