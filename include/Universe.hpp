@@ -4,17 +4,14 @@
 
 using namespace entt::literals;
 
-namespace css
-{
+namespace css {
 
 // TODO: convert this class into a component.
 class Universe {
 public:
-
-    Universe(entt::registry &world) : m_World { world } {}
+    Universe(entt::registry &world) : m_World{world} {}
 
     auto add_body(
-        entt::registry &world,
         const std::string &name,
         const std::string &model_path,
         const std::string &texture_path = "",
@@ -23,35 +20,34 @@ public:
         const float size = 1.f,
         const float mass = 1.f
     ) -> entt::entity {
-        auto body_model = world.create();
+        auto body_model = m_World.create();
 
-        kawe::Mesh::emplace(world, body_model, model_path);
+        kawe::Mesh::emplace(m_World, body_model, model_path);
 
         // loading texture if one is provided
         if (!texture_path.empty())
-            kawe::Texture2D::emplace(
-                world, body_model, "./asset/textures/Planet_4K.jpg");
+            kawe::Texture2D::emplace(m_World, body_model, texture_path);
 
-        const auto vbo = world.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(body_model);
+        const auto vbo = m_World.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(body_model);
         const auto index_size = vbo.vertices.size() / vbo.stride_size;
         kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(
-            world, body_model, std::vector<float>(index_size * 4, 1.0f), 4);
-        world.emplace<CelestialBody::MassF>(body_model, mass);
-        world.emplace<CelestialBody::SizeF>(body_model, size);
-        world.emplace<kawe::Name>(body_model, name);
-        world.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
-        world.emplace<kawe::Position3f>(body_model, position);
-        world.emplace<kawe::Velocity3f>(body_model, initial_velocity);
-        CelestialBody::OrbitVizualiser::emplace(world, body_model, 10, std::chrono::milliseconds(1000));
-        world.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
+            m_World, body_model, std::vector<float>(index_size * 4, 1.0f), 4);
+        m_World.emplace<CelestialBody::MassF>(body_model, mass);
+        m_World.emplace<CelestialBody::SizeF>(body_model, size);
+        m_World.emplace<kawe::Name>(body_model, name);
+        m_World.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
+        m_World.emplace<kawe::Position3f>(body_model, position);
+        m_World.emplace<kawe::Velocity3f>(body_model, initial_velocity);
+        // CelestialBody::OrbitVizualiser::emplace(m_World, body_model, 10, std::chrono::milliseconds(1000));
+        m_World.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
 
         m_Bodies.push_back(body_model);
 
         return body_model;
     }
 
-    auto on_update_bodies(const kawe::TimeElapsed &e) -> void {
-
+    auto on_update_bodies(const kawe::TimeElapsed &e) -> void
+    {
         const auto dt_nano = e.elapsed;
         const auto dt_secs =
             static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
@@ -59,11 +55,9 @@ public:
 
         for (const auto &body : m_Bodies)
             for (const auto &other : m_Bodies) {
-
                 // ! could break if id system change for an object.
                 // TODO: refactore this.
-                if (body == other)
-                    continue;
+                if (body == other) continue;
 
                 const auto body_position = m_World.get<kawe::Position3f>(body).component;
                 const auto body_mass = static_cast<double>(m_World.get<CelestialBody::MassF>(body).mass);
@@ -87,4 +81,4 @@ private:
     std::vector<entt::entity> m_Bodies;
 };
 
-}
+} // namespace css
