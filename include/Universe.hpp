@@ -3,6 +3,7 @@
 #include "celestial-bodies/CelestialBodyComponents.hpp"
 
 using namespace entt::literals;
+using namespace std::chrono_literals;
 
 namespace css {
 
@@ -18,15 +19,14 @@ public:
         const glm::vec3 &position = glm::vec3(0.f),
         const glm::vec3 &initial_velocity = glm::vec3(0.f),
         const float size = 1.f,
-        const float mass = 1.f
-    ) -> entt::entity {
+        const float mass = 1.f) -> entt::entity
+    {
         auto body_model = m_World.create();
 
         kawe::Mesh::emplace(m_World, body_model, model_path);
 
         // loading texture if one is provided
-        if (!texture_path.empty())
-            kawe::Texture2D::emplace(m_World, body_model, texture_path);
+        if (!texture_path.empty()) kawe::Texture2D::emplace(m_World, body_model, texture_path);
 
         const auto vbo = m_World.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(body_model);
         const auto index_size = vbo.vertices.size() / vbo.stride_size;
@@ -38,7 +38,7 @@ public:
         m_World.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
         m_World.emplace<kawe::Position3f>(body_model, position);
         m_World.emplace<kawe::Velocity3f>(body_model, initial_velocity);
-        // CelestialBody::OrbitVizualiser::emplace(m_World, body_model, 10, std::chrono::milliseconds(1000));
+        CelestialBody::OrbitVizualiser::emplace(m_World, body_model, 10, 1000ms);
         m_World.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
 
         m_Bodies.push_back(body_model);
@@ -50,8 +50,8 @@ public:
     {
         const auto dt_nano = e.elapsed;
         const auto dt_secs =
-            static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
-            / 1'000'000.0;
+            static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
+            / 1'000'000.0f;
 
         for (const auto &body : m_Bodies)
             for (const auto &other : m_Bodies) {
@@ -59,12 +59,12 @@ public:
                 // TODO: refactore this.
                 if (body == other) continue;
 
-                const auto body_position = m_World.get<kawe::Position3f>(body).component;
-                const auto body_mass = static_cast<double>(m_World.get<CelestialBody::MassF>(body).mass);
-                const auto other_position = m_World.get<kawe::Position3f>(other).component;
-                const auto other_mass = static_cast<double>(m_World.get<CelestialBody::MassF>(other).mass);
+                const glm::vec3 body_position = m_World.get<kawe::Position3f>(body).component;
+                const auto body_mass = m_World.get<CelestialBody::MassF>(body).mass;
+                const glm::vec3 other_position = m_World.get<kawe::Position3f>(other).component;
+                const auto other_mass = m_World.get<CelestialBody::MassF>(other).mass;
 
-                const auto sqr_dist = glm::pow((body_position - other_position).length(), 2);
+                const auto sqr_dist = static_cast<float>(glm::pow((body_position - other_position).length(), 2));
                 const auto force_dir = glm::normalize(body_position - other_position);
                 const auto force = force_dir * gravitational_constant * body_mass * other_mass / sqr_dist;
                 const auto acceleration = force / body_mass;

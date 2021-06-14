@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Engine.hpp"
+#include "primitives/Line.hpp"
 
-constexpr auto gravitational_constant = 0.000001;
+constexpr auto gravitational_constant = 0.000001f;
 
 using namespace entt::literals;
 
@@ -29,66 +30,71 @@ struct LifeTime {
     std::size_t lifetime;
 };
 
-// struct OrbitVizualiser {
-//     entt::entity &parent;
-//     std::size_t iterations;
-//     std::chrono::milliseconds refresh_rate;
-//     std::vector<entt::entity> lines;
+struct OrbitVizualiser {
+    entt::entity parent;
+    entt::entity orbit_gizmo;
+    std::size_t iterations;
+    std::chrono::milliseconds refresh_rate;
 
-//     static auto
-//         emplace(
-//             entt::registry &world,
-//             entt::entity &entity,
-//             std::size_t iterations,
-//             std::chrono::milliseconds refresh_rate
-//     ) -> OrbitVizualiser &
-//     {
-//         OrbitVizualiser visualizer {
-//           .parent = entity,
-//           .iterations = iterations,
-//           .refresh_rate = refresh_rate,
-//           .lines = {}
-//         };
+    static auto
+        emplace(entt::registry &world, const entt::entity &entity, std::size_t iterations, std::chrono::milliseconds refresh_rate)
+            -> OrbitVizualiser &
+    {
+        auto &vizualiser =
+            world.emplace_or_replace<OrbitVizualiser>(entity, entity, world.create(), iterations, refresh_rate);
 
-//         visualizer.lines.resize(iterations);
+        const auto compute_n_iterations = [&world,
+                                           emplaced_visualizer = world.get<OrbitVizualiser>(entity)]() -> void {
+            // reconstructing the gizmo's positions.
 
-//         // initializing lines.
-//         for (auto &id : visualizer.lines)
-//             id = world.create();
+            world.remove_if_exists<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(
+                emplaced_visualizer.orbit_gizmo);
 
-//         auto compute_n_iterations = [&world, &visualizer, &iterations]() -> void
-//         {
-//             for (std::size_t it = 0; it < iterations; ++it)
-//                 for (const auto &other : world.view<entt::tag<"CelestialBody"_hs>>()) {
-//                     // ! could break if id system change for an object.
-//                     // TODO: refactore this.
-//                     if (visualizer.parent == other)
-//                         continue;
+            std::vector<float> vertices{};
+            vertices.reserve(emplaced_visualizer.iterations * 3);
 
-//                     const auto body_position = world.get<kawe::Position3f>(visualizer.parent).component;
-//                     const auto body_mass = static_cast<double>(world.get<CelestialBody::MassF>(visualizer.parent).mass);
-//                     const auto other_position = world.get<kawe::Position3f>(other).component;
-//                     const auto other_mass = static_cast<double>(world.get<CelestialBody::MassF>(other).mass);
+            glm::vec3 body_position = world.get<kawe::Position3f>(emplaced_visualizer.parent).component;
+            glm::vec3 body_velocity = world.get<kawe::Velocity3f>(emplaced_visualizer.parent).component;
+            const auto body_mass = world.get<CelestialBody::MassF>(emplaced_visualizer.parent).mass;
 
-//                     const auto sqr_dist = glm::pow((body_position - other_position).length(), 2);
-//                     const auto force_dir = glm::normalize(body_position - other_position);
-//                     const auto force = force_dir * gravitational_constant * body_mass * other_mass / sqr_dist;
-//                     [[maybe_unused]] const auto acceleration = force / body_mass;
+            for (std::size_t it = 0; it < emplaced_visualizer.iterations; ++it)
+                for (const auto &other : world.view<entt::tag<"CelestialBody"_hs>>()) {
+                    // ! could break if id system change for an object.
+                    // TODO: refactore this.
+                    if (emplaced_visualizer.parent == other) continue;
 
-//                     // updating the current body's velocity.
-//                     // visualizer.velocity.component += acceleration;
-//                 }
-//         };
+                    const glm::vec3 other_position = world.get<kawe::Position3f>(other).component;
+                    const auto other_mass = world.get<CelestialBody::MassF>(other).mass;
 
-//         // kawe::Clock::emplace(world, entity, refresh_rate, compute_n_iterations);
+                    const auto sqr_dist =
+                        static_cast<float>(glm::pow((body_position - other_position).length(), 2));
+                    const auto force_dir = glm::normalize(body_position - other_position);
+                    const auto force = force_dir * gravitational_constant * body_mass * other_mass / sqr_dist;
+                    const auto acceleration = force / body_mass;
 
-//         // world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::OrbitVizualiser::on_update_orbit_visualization>(visualizer);
-//         // world.on_update<OrbitVizualiser>().connect<compute_n_iterations>();
+                    // updating the current body's velocity.
+                    body_velocity += acceleration;
+                    body_position += body_velocity;
 
-//         return world.emplace_or_replace<OrbitVizualiser>(entity, visualizer);
-//     }
-// };
+                    vertices.push_back(body_position.x);
+                    vertices.push_back(body_position.y);
+                    vertices.push_back(body_position.z);
+                }
 
-}
+            kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(
+                world, emplaced_visualizer.orbit_gizmo, vertices, 3);
+            world.emplace_or_replace<kawe::FillColor>(
+                emplaced_visualizer.orbit_gizmo, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
+
+            std::for_each(vertices.begin(), vertices.end(), [](tinyobj::real_t coord) { spdlog::warn(coord); });
+        };
+
+        kawe::Clock::emplace(world, entity, refresh_rate, compute_n_iterations);
+
+        return vizualiser;
+    }
+};
+
+} // namespace CelestialBody
 
 } // namespace css

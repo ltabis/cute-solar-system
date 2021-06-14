@@ -21,18 +21,10 @@ int main()
         world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
             universe.get());
 
-        // const auto map = world.create();
-        // world.emplace<kawe::Parent>(cube, map);
-        // world.get_or_emplace<kawe::Children>(map).component.push_back(cube);
-
         const auto player_id = world.create();
         world.emplace<kawe::Position3f>(player_id, glm::vec3{0, 10, 0});
         world.emplace<kawe::Collider>(player_id);
         world.emplace<kawe::Name>(player_id, "Player");
-
-        // creating a sphere and a line.
-        // create_sphere(world, 1, 10, 10);
-        create_line(world, glm::vec3(0.f, -50.f, 0.f), glm::vec3(0.f, 50.f, 0.f));
 
         player = std::make_shared<css::Player>(player_id, world);
         world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&css::Player::on_key_pressed>(
@@ -55,12 +47,6 @@ int main()
             glm::vec3(3.f, 0.f, 0.f),
             glm::vec3(0.f, .1f, 0.f),
             1);
-
-          auto debug = [](){
-            spdlog::info("a second has passed ...");
-          };
-
-          kawe::Clock::emplace(world, earth, std::chrono::milliseconds(1000), debug);
     };
 
     engine.on_imgui = [&my_world]() {
