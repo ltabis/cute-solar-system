@@ -47,6 +47,9 @@ int main()
             glm::vec3(3.f, 0.f, 0.f),
             glm::vec3(0.f, .1f, 0.f),
             1);
+
+        // running orbit simulation.
+        css::CelestialBody::OrbitVizualiser::compute_n_iterations(*my_world);
     };
 
     engine.on_imgui = [&my_world]() {
