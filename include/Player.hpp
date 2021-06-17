@@ -8,18 +8,18 @@ struct Player {
     entt::entity entity;
     entt::registry &world;
 
-    auto on_key_pressed(const kawe::Pressed<kawe::Key> &key)
+    auto on_key_pressed(const kawe::event::Pressed<kawe::event::Key> &key)
     {
         std::optional<double> x{};
         std::optional<double> y{};
         std::optional<double> z{};
 
         switch (key.source.keycode) {
-        case kawe::Key::Code::KEY_E: x = 0.5; break;
-        case kawe::Key::Code::KEY_S: z = 0.5; break;
-        case kawe::Key::Code::KEY_F: z = -0.5; break;
-        case kawe::Key::Code::KEY_D: x = -0.5; break;
-        case kawe::Key::Code::KEY_SPACE: y = 3.0; break;
+        case kawe::event::Key::Code::KEY_E: x = 0.5; break;
+        case kawe::event::Key::Code::KEY_S: z = 0.5; break;
+        case kawe::event::Key::Code::KEY_F: z = -0.5; break;
+        case kawe::event::Key::Code::KEY_D: x = -0.5; break;
+        case kawe::event::Key::Code::KEY_SPACE: y = 3.0; break;
         default: break;
         }
         if (x.has_value() || y.has_value() || z.has_value()) {

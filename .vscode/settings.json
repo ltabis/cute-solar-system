@@ -73,6 +73,12 @@
       "*.ipp": "cpp",
       "codecvt": "cpp",
       "numbers": "cpp",
-      "future": "cpp"
-    }
+      "future": "cpp",
+      "forward_list": "cpp",
+      "semaphore": "cpp"
+    },
+    "cSpell.words": [
+      "entt",
+      "kawe"
+    ]
 }

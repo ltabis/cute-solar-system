@@ -18,15 +18,14 @@ public:
         const glm::vec3 &position = glm::vec3(0.f),
         const glm::vec3 &initial_velocity = glm::vec3(0.f),
         const float size = 1.f,
-        const float mass = 1.f
-    ) -> entt::entity {
+        const float mass = 1.f) -> entt::entity
+    {
         auto body_model = m_World.create();
 
         kawe::Mesh::emplace(m_World, body_model, model_path);
 
         // loading texture if one is provided
-        if (!texture_path.empty())
-            kawe::Texture2D::emplace(m_World, body_model, texture_path);
+        if (!texture_path.empty()) kawe::Texture2D::emplace(m_World, body_model, texture_path);
 
         const auto vbo = m_World.get<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(body_model);
         const auto index_size = vbo.vertices.size() / vbo.stride_size;
@@ -46,9 +45,9 @@ public:
         return body_model;
     }
 
-    auto on_update_bodies(const kawe::TimeElapsed &e) -> void
+    auto on_update_bodies(const kawe::event::TimeElapsed &e) -> void
     {
-        const auto dt_nano = e.elapsed;
+        const auto dt_nano = e.world_time;
         const auto dt_secs =
             static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
             / 1'000'000.0;
