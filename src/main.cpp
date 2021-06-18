@@ -18,7 +18,7 @@ int main()
         my_world = &world;
 
         universe = std::make_shared<css::Universe>(world);
-        world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
+        world.ctx<entt::dispatcher *>()->sink<kawe::event::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
             universe.get());
 
         // const auto map = world.create();
@@ -35,8 +35,9 @@ int main()
         create_line(world, glm::vec3(0.f, -50.f, 0.f), glm::vec3(0.f, 50.f, 0.f));
 
         player = std::make_shared<css::Player>(player_id, world);
-        world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&css::Player::on_key_pressed>(
-            player.get());
+        world.ctx<entt::dispatcher *>()
+            ->sink<kawe::event::Pressed<kawe::event::Key>>()
+            .connect<&css::Player::on_key_pressed>(player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
         [[maybe_unused]] auto earth = universe->add_body(
@@ -56,11 +57,9 @@ int main()
             glm::vec3(0.f, .1f, 0.f),
             1);
 
-          auto debug = [](){
-            spdlog::info("a second has passed ...");
-          };
+        auto debug = []() { spdlog::info("a second has passed ..."); };
 
-          kawe::Clock::emplace(world, earth, std::chrono::milliseconds(1000), debug);
+        kawe::Clock::emplace(world, earth, std::chrono::milliseconds(1000), debug);
     };
 
     engine.on_imgui = [&my_world]() {
