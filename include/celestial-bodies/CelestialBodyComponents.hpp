@@ -63,15 +63,16 @@ struct OrbitVizualiser {
         spdlog::debug("computing {} iterations for orbits.", iterations);
         auto nb_celestial_bodies = world.size<OrbitVizualiser>();
 
-        std::size_t body_index = 0;
-
         // keeping track of initial velocity & positions.
         // we don't want to update the actual bodies.
         auto simulation_bodies = std::vector<DummyCelestialBody>(nb_celestial_bodies);
 
         // initializing all 'virtual' bodies.
-        for (auto entity : world.view<OrbitVizualiser>())
-            simulation_bodies[body_index++] = copy_body(world, entity);
+        {
+            std::size_t body_index = 0;
+            for (auto entity : world.view<OrbitVizualiser>())
+                simulation_bodies[body_index++] = copy_body(world, entity);
+        }
 
         // initializing all 'virtual' bodies.
         auto bodies_gizmos = std::vector<std::vector<float>>(nb_celestial_bodies);
@@ -98,38 +99,30 @@ struct OrbitVizualiser {
                     body.velocity += acceleration;
                 }
 
-            body_index = 0;
-
             // updating all positions.
-            for (auto &body : simulation_bodies) {
+            for (std::size_t i = 0; i < simulation_bodies.size(); ++i) {
                 // updating current body position.
-                body.position += body.velocity;
+                simulation_bodies[i].position += simulation_bodies[i].velocity;
 
                 // adding new coords to the current gizmo's vertex.
-                bodies_gizmos[body_index].push_back(static_cast<float>(body.position.x));
-                bodies_gizmos[body_index].push_back(static_cast<float>(body.position.y));
-                bodies_gizmos[body_index].push_back(static_cast<float>(body.position.z));
-
-                ++body_index;
+                bodies_gizmos[i].push_back(static_cast<float>(simulation_bodies[i].position.x));
+                bodies_gizmos[i].push_back(static_cast<float>(simulation_bodies[i].position.y));
+                bodies_gizmos[i].push_back(static_cast<float>(simulation_bodies[i].position.z));
             }
         }
 
-        body_index = 0;
-
         // updating orbits VAOs.
-        for (auto &body : simulation_bodies) {
-            auto &component = world.get<OrbitVizualiser>(body.ref);
+        for (std::size_t i = 0; i < simulation_bodies.size(); ++i) {
+            auto &component = world.get<OrbitVizualiser>(simulation_bodies[i].ref);
 
             kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(
-                world, component.orbit_gizmo, bodies_gizmos[body_index], 3);
+                world, component.orbit_gizmo, bodies_gizmos[i], 3);
 
             world.patch<kawe::Render::VAO>(component.orbit_gizmo, [](kawe::Render::VAO &vao) {
                 vao.mode = kawe::Render::VAO::DisplayMode::LINES;
             });
 
             // world.emplace<kawe::FillColor>(component.orbit_gizmo, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
-
-            ++body_index;
         }
 
         spdlog::debug("finished computing iterations.");
