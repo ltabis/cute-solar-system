@@ -18,7 +18,7 @@ int main()
         my_world = &world;
 
         universe = std::make_shared<css::Universe>(world);
-        world.ctx<entt::dispatcher *>()->sink<kawe::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
+        world.ctx<entt::dispatcher *>()->sink<kawe::event::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
             universe.get());
 
         const auto player_id = world.create();
@@ -27,8 +27,9 @@ int main()
         world.emplace<kawe::Name>(player_id, "Player");
 
         player = std::make_shared<css::Player>(player_id, world);
-        world.ctx<entt::dispatcher *>()->sink<kawe::Pressed<kawe::Key>>().connect<&css::Player::on_key_pressed>(
-            player.get());
+        world.ctx<entt::dispatcher *>()
+            ->sink<kawe::event::Pressed<kawe::event::Key>>()
+            .connect<&css::Player::on_key_pressed>(player.get());
 
         //#ifdef TEST_THE_MESH_LOADER
         [[maybe_unused]] auto earth = universe->add_body(

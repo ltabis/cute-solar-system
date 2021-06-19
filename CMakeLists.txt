@@ -17,3 +17,4 @@ target_compile_features(cute_solar_system PRIVATE cxx_std_20)
 install(TARGETS cute_solar_system DESTINATION bin)
 
 install(DIRECTORY asset DESTINATION .)
+install(FILES asset/imgui.ini DESTINATION .)

@@ -46,9 +46,9 @@ public:
         return body_model;
     }
 
-    auto on_update_bodies(const kawe::TimeElapsed &e) -> void
+    auto on_update_bodies(const kawe::event::TimeElapsed &e) -> void
     {
-        const auto dt_nano = e.elapsed;
+        const auto dt_nano = e.world_time;
         const auto dt_secs =
             static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
             / 1'000'000.0f;
