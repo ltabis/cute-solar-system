@@ -3,7 +3,6 @@
 #include "celestial-bodies/CelestialBodyComponents.hpp"
 
 using namespace entt::literals;
-using namespace std::chrono_literals;
 
 namespace css {
 
@@ -38,7 +37,7 @@ public:
         m_World.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
         m_World.emplace<kawe::Position3f>(body_model, position);
         m_World.emplace<kawe::Velocity3f>(body_model, initial_velocity);
-        CelestialBody::OrbitVizualiser::emplace(m_World, body_model, 10, 1000ms);
+        CelestialBody::OrbitVizualiser::emplace(m_World, body_model);
         m_World.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
 
         m_Bodies.push_back(body_model);

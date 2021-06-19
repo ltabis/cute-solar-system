@@ -34,114 +34,107 @@ struct LifeTime {
 struct OrbitVizualiser {
     entt::entity parent;
     entt::entity orbit_gizmo;
-    std::size_t iterations;
-    std::chrono::milliseconds refresh_rate;
 
-    static auto
-        emplace(entt::registry &world, const entt::entity &entity, std::size_t iterations, std::chrono::milliseconds refresh_rate)
-            -> OrbitVizualiser &
+    // class used to simulate orbits.
+    struct DummyCelestialBody {
+        glm::dvec3 position;
+        glm::dvec3 velocity;
+        float mass;
+
+        entt::entity ref;
+    };
+
+    static auto emplace(entt::registry &world, const entt::entity &entity) -> OrbitVizualiser &
     {
-        return world.emplace_or_replace<OrbitVizualiser>(entity, entity, world.create(), iterations, refresh_rate);
+        return world.emplace_or_replace<OrbitVizualiser>(entity, entity, world.create());
     }
 
-    static auto compute_n_iterations(entt::registry &world) -> void
+    static auto copy_body(const entt::registry &world, const entt::entity &entity) -> DummyCelestialBody
     {
+        return DummyCelestialBody{
+            .position = world.get<kawe::Position3f>(entity).component,
+            .velocity = world.get<kawe::Velocity3f>(entity).component,
+            .mass = world.get<CelestialBody::MassF>(entity).mass,
+            .ref = entity};
+    }
+
+    static auto compute_n_iterations(entt::registry &world, std::size_t iterations) -> void
+    {
+        spdlog::debug("computing {} iterations for orbits.", iterations);
         auto nb_celestial_bodies = world.size<OrbitVizualiser>();
 
-        // keeping track of initial velocity & positions to reset them after.
-        auto initial_position = std::unordered_map<entt::entity, glm::vec3>(nb_celestial_bodies);
-        auto initial_velocity = std::unordered_map<entt::entity, glm::vec3>(nb_celestial_bodies);
+        std::size_t body_index = 0;
 
-        // computing orbits for each instance that emplaced the component.
-        world.view<OrbitVizualiser>().each([&world, &initial_position, &initial_velocity](
-                                               entt::entity entity, OrbitVizualiser &component) {
-            // getting the body's characteristics.
-            auto &body_position = world.get<kawe::Position3f>(entity).component;
-            auto &body_velocity = world.get<kawe::Velocity3f>(entity).component;
-            const auto body_mass = world.get<CelestialBody::MassF>(entity).mass;
+        // keeping track of initial velocity & positions.
+        // we don't want to update the actual bodies.
+        auto simulation_bodies = std::vector<DummyCelestialBody>(nb_celestial_bodies);
 
-            // storing initial values.
-            initial_position[entity] = body_position;
-            initial_velocity[entity] = body_velocity;
+        // initializing all 'virtual' bodies.
+        for (auto entity : world.view<OrbitVizualiser>())
+            simulation_bodies[body_index++] = copy_body(world, entity);
 
-            // removing position attributes of the orbital gizmo if it exists.
-            world.remove_if_exists<kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>>(component.orbit_gizmo);
+        // initializing all 'virtual' bodies.
+        auto bodies_gizmos = std::vector<std::vector<float>>(nb_celestial_bodies);
 
-            // creating a buffer of coordinates to create the gizmo's vertices.
-            auto vertices = std::vector<float>(component.iterations * 3);
+        std::for_each(bodies_gizmos.begin(), bodies_gizmos.end(), [&iterations](auto &vertices) {
+            vertices = std::vector<float>(iterations);
+        });
 
-            for (std::size_t it = 0; it < component.iterations; ++it) {
-                // updating all velocities.
-                for (const auto &other : world.view<entt::tag<"CelestialBody"_hs>>()) {
+        // simulating all body's orbits.
+        for (std::size_t it = 0; it < iterations; ++it) {
+            for (auto &body : simulation_bodies)
+                for (auto &other : simulation_bodies) {
                     // ! could break if id system change for an object.
                     // TODO: refactore this.
-                    if (entity == other) continue;
+                    if (body.ref == other.ref) continue;
 
-                    const auto other_position = world.get<kawe::Position3f>(other).component;
-                    const auto other_mass = world.get<CelestialBody::MassF>(other).mass;
+                    const auto sqr_dist = glm::pow((body.position - other.position).length(), 2);
+                    const auto force_dir = glm::normalize(body.position - other.position);
+                    const auto force = force_dir * gravitational_constant_d * static_cast<double>(body.mass)
+                                       * static_cast<double>(other.mass) / sqr_dist;
+                    const auto acceleration = force / static_cast<double>(body.mass);
 
-                    const auto sqr_dist = glm::pow((body_position - other_position).length(), 2);
-                    const auto force_dir = glm::normalize(body_position - other_position);
-                    const auto force = force_dir * gravitational_constant_d * static_cast<double>(body_mass)
-                                       * static_cast<double>(other_mass) / sqr_dist;
-                    const auto acceleration = force / static_cast<double>(body_mass);
-
-                    world.patch<kawe::Velocity3f>(
-                        entity, [&acceleration](auto &vel) { vel.component += acceleration; });
+                    // updating the velocity of the current body.
+                    body.velocity += acceleration;
                 }
 
-                // updating all positions.
-                for (const auto &other : world.view<entt::tag<"CelestialBody"_hs>>()) {
-                    // ! could break if id system change for an object.
-                    // TODO: refactore this.
-                    if (entity == other) continue;
+            body_index = 0;
 
-                    auto &new_pos = world.patch<kawe::Position3f>(entity, [&world, &entity](auto &pos) {
-                        pos.component += world.get<kawe::Velocity3f>(entity).component;
-                    });
+            // updating all positions.
+            for (auto &body : simulation_bodies) {
+                // updating current body position.
+                body.position += body.velocity;
 
-                    vertices.push_back(static_cast<float>(new_pos.component.x));
-                    vertices.push_back(static_cast<float>(new_pos.component.y));
-                    vertices.push_back(static_cast<float>(new_pos.component.z));
-                }
+                // adding new coords to the current gizmo's vertex.
+                bodies_gizmos[body_index].push_back(static_cast<float>(body.position.x));
+                bodies_gizmos[body_index].push_back(static_cast<float>(body.position.y));
+                bodies_gizmos[body_index].push_back(static_cast<float>(body.position.z));
+
+                ++body_index;
             }
+        }
+
+        body_index = 0;
+
+        // updating orbits VAOs.
+        for (auto &body : simulation_bodies) {
+            auto &component = world.get<OrbitVizualiser>(body.ref);
 
             kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(
-                world, component.orbit_gizmo, vertices, 3);
+                world, component.orbit_gizmo, bodies_gizmos[body_index], 3);
+
             world.patch<kawe::Render::VAO>(component.orbit_gizmo, [](kawe::Render::VAO &vao) {
                 vao.mode = kawe::Render::VAO::DisplayMode::LINES;
             });
-            world.emplace_or_replace<kawe::FillColor>(component.orbit_gizmo, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
 
-            spdlog::warn("entity {}", entity);
-            std::for_each(vertices.begin(), vertices.end(), [](tinyobj::real_t coord) { spdlog::warn(coord); });
-            spdlog::warn("gizmo end.");
-        });
+            // world.emplace<kawe::FillColor>(component.orbit_gizmo, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
 
-        // reset celestial bodies initial position & velocities.
-        for (const auto &entity : world.view<entt::tag<"CelestialBody"_hs>>()) {
-            spdlog::warn(
-                "initial_velocity: {}, {}, {}",
-                initial_velocity[entity].x,
-                initial_velocity[entity].y,
-                initial_velocity[entity].z);
-
-            spdlog::warn(
-                "initial_position: {}, {}, {}",
-                initial_position[entity].x,
-                initial_position[entity].y,
-                initial_position[entity].z);
-
-            // updating velocity.
-            world.patch<kawe::Velocity3f>(
-                entity, [init_vel = initial_velocity[entity]](auto &vel) { vel.component = init_vel; });
-
-            // updating position.
-            world.patch<kawe::Position3f>(
-                entity, [init_pos = initial_position[entity]](auto &pos) { pos.component = init_pos; });
+            ++body_index;
         }
+
+        spdlog::debug("finished computing iterations.");
     }
-};
+}; // namespace CelestialBody
 
 } // namespace CelestialBody
 

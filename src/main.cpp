@@ -50,7 +50,7 @@ int main()
             1);
 
         // running orbit simulation.
-        css::CelestialBody::OrbitVizualiser::compute_n_iterations(*my_world);
+        css::CelestialBody::OrbitVizualiser::compute_n_iterations(*my_world, 5);
     };
 
     engine.on_imgui = [&my_world]() {
