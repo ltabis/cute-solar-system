@@ -89,7 +89,7 @@ struct CuteSolarSystem {
             }
         };
 
-        universe->add_body(
+        const auto object = universe->add_body(
             fmt::format("{} n°{}", magic_enum::enum_name(type_selected).data(), std::rand() % 1000),
             get_model(type_selected),
             get_texture(type_selected),
@@ -97,13 +97,20 @@ struct CuteSolarSystem {
                 static_cast<double>(std::rand() % 50) - 25.0,
                 static_cast<double>(std::rand() % 50) - 25.0,
                 static_cast<double>(std::rand() % 50) - 25.0),
-
-            glm::vec3(
-                static_cast<double>(std::rand() % 10) / 10.0f - 0.5,
-                static_cast<double>(std::rand() % 10) / 10.0f - 0.5,
-                static_cast<double>(std::rand() % 10) / 10.0f - 0.5),
+            type_selected == CelestialObjectType::STAR ? glm::vec3(0.0f)
+                                                       : glm::vec3(
+                                                           static_cast<double>(std::rand() % 10) / 10.0f - 0.5,
+                                                           static_cast<double>(std::rand() % 10) / 10.0f - 0.5,
+                                                           static_cast<double>(std::rand() % 10) / 10.0f - 0.5),
             get_size(type_selected) * (std::rand() % 10 / 10.0 - 0.5),
             get_mass(type_selected));
+        if (type_selected == CelestialObjectType::STAR) {
+            my_world->emplace<kawe::PointLight>(object);
+            const auto &shaders = my_world->ctx<kawe::State *>()->shaders;
+            auto found = std::find_if(
+                shaders.begin(), shaders.end(), [](auto &i) { return i->getName() == "texture_2D_emissif"; });
+            my_world->get<kawe::Render::VAO>(object).shader_program = found->get();
+        }
     }
 
     auto on_imgui() -> void
