@@ -78,7 +78,16 @@
       "semaphore": "cpp"
     },
     "cSpell.words": [
+      "GLFW",
+      "Lenum",
+      "Lsizei",
+      "OPENGL",
+      "dmat",
+      "dvec",
       "entt",
+      "glew",
+      "guizmo",
+      "imgui",
       "kawe"
     ]
 }

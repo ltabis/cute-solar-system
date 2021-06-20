@@ -12,6 +12,8 @@ namespace CelestialBody {
 
 template<typename T>
 struct Mass {
+    static constexpr std::string_view name{"Mass"};
+
     T mass;
 };
 
@@ -19,12 +21,16 @@ using MassF = Mass<float>;
 
 template<typename T>
 struct Size {
+    static constexpr std::string_view name{"Size"};
+
     std::size_t size;
 };
 
 using SizeF = Size<float>;
 
 struct LifeTime {
+    static constexpr std::string_view name{"LifeTime"};
+
     // TODO: to replace by std::chrono.
     std::size_t lifetime;
 };
@@ -89,6 +95,6 @@ struct LifeTime {
 //     }
 // };
 
-}
+} // namespace CelestialBody
 
 } // namespace css

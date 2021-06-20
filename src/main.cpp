@@ -1,45 +1,75 @@
 #include "Universe.hpp"
 #include "component.hpp"
-#include "Player.hpp"
 
 #include "primitives/Line.hpp"
 #include "primitives/Sphere.hpp"
 
-int main()
-{
-    kawe::Engine engine{};
+#include "widgets/ComponentInspector.hpp"
 
-    std::shared_ptr<css::Player> player;
+using CSSComponent = std::variant<
+    std::monostate,
+
+    kawe::Position3f,
+    kawe::Scale3f,
+    kawe::Rotation3f,
+
+    css::CelestialBody::MassF,
+    css::CelestialBody::SizeF,
+    css::CelestialBody::LifeTime
+
+    >;
+
+struct CuteSolarSystem {
+    entt::registry *my_world = nullptr;
     std::shared_ptr<css::Universe> universe;
 
-    entt::registry *my_world;
+    kawe::ComponentInspector inspector{};
 
-    engine.on_create = [&my_world, &universe, &player](entt::registry &world) {
+    auto on_create(entt::registry &world) -> void
+    {
         my_world = &world;
+        on_create_safe();
+    }
 
-        universe = std::make_shared<css::Universe>(world);
-        world.ctx<entt::dispatcher *>()->sink<kawe::event::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
+    auto on_imgui() -> void
+    {
+        ImGui::Begin("Cute Solar System - Control Panel");
+        const auto &in = my_world->ctx<kawe::State *>()->clear_color;
+        float temp[4] = {in.r, in.g, in.b, in.a};
+
+        if (ImGui::ColorEdit4("clear color", temp))
+            my_world->ctx<kawe::State *>()->clear_color = {temp[0], temp[1], temp[2], temp[3]};
+
+        inspector.draw<CSSComponent>(*my_world);
+
+        ImGui::End();
+    }
+
+private:
+    auto on_object_pick(entt::registry &reg, entt::entity picked) -> void
+    {
+        for (const auto &cam : reg.view<kawe::CameraData, kawe::Children>()) {
+            for (const auto &i : reg.get<kawe::Children>(cam).component) {
+                if (reg.get<kawe::Name>(i).component == fmt::format("<kawe:camera_target#{}>", cam)) {
+                    reg.patch<kawe::Position3f>(i, [&reg, &picked](auto &pos) {
+                        pos.component = reg.get<kawe::Position3f>(picked).component;
+                    });
+                }
+            }
+        }
+    }
+
+    auto on_create_safe() -> void
+    {
+        assert(my_world != nullptr);
+        my_world->on_update<kawe::Pickable>().connect<&CuteSolarSystem::on_object_pick>(*this);
+
+        universe = std::make_shared<css::Universe>(*my_world);
+        my_world->ctx<entt::dispatcher *>()->sink<kawe::event::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
             universe.get());
 
-        // const auto map = world.create();
-        // world.emplace<kawe::Parent>(cube, map);
-        // world.get_or_emplace<kawe::Children>(map).component.push_back(cube);
+        create_line(*my_world, glm::vec3(0.f, -50.f, 0.f), glm::vec3(0.f, 50.f, 0.f));
 
-        const auto player_id = world.create();
-        world.emplace<kawe::Position3f>(player_id, glm::vec3{0, 10, 0});
-        world.emplace<kawe::Collider>(player_id);
-        world.emplace<kawe::Name>(player_id, "Player");
-
-        // creating a sphere and a line.
-        // create_sphere(world, 1, 10, 10);
-        create_line(world, glm::vec3(0.f, -50.f, 0.f), glm::vec3(0.f, 50.f, 0.f));
-
-        player = std::make_shared<css::Player>(player_id, world);
-        world.ctx<entt::dispatcher *>()
-            ->sink<kawe::event::Pressed<kawe::event::Key>>()
-            .connect<&css::Player::on_key_pressed>(player.get());
-
-        //#ifdef TEST_THE_MESH_LOADER
         [[maybe_unused]] auto earth = universe->add_body(
             "Earth",
             "./asset/models/Earth.obj",
@@ -57,21 +87,17 @@ int main()
             glm::vec3(0.f, .1f, 0.f),
             1);
 
-        auto debug = []() { spdlog::info("a second has passed ..."); };
+        my_world->ctx<kawe::State *>()->clear_color = {0.2, 0.2, 0.2, 1.0};
+    }
+};
 
-        kawe::Clock::emplace(world, earth, std::chrono::milliseconds(1000), debug);
-    };
+int main()
+{
+    kawe::Engine engine{};
+    CuteSolarSystem app{};
 
-    engine.on_imgui = [&my_world]() {
-        ImGui::Begin("Cute Solar System - Control Panel");
-        const auto &in = my_world->ctx<kawe::State *>()->clear_color;
-        float temp[4] = {in.r, in.g, in.b, in.a};
-
-        if (ImGui::ColorEdit4("clear color", temp))
-            my_world->ctx<kawe::State *>()->clear_color = {temp[0], temp[1], temp[2], temp[3]};
-
-        ImGui::End();
-    };
+    engine.on_create = [&app](entt::registry &world) { app.on_create(world); };
+    engine.on_imgui = [&app] { app.on_imgui(); };
 
     engine.start();
 }
