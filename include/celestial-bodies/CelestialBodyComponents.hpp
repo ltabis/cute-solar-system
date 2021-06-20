@@ -3,8 +3,8 @@
 #include "Engine.hpp"
 #include "primitives/Line.hpp"
 
-constexpr auto gravitational_constant = 0.000001f;
-constexpr auto gravitational_constant_d = 0.1;
+constexpr auto gravitational_constant = 0.0001f;
+constexpr auto gravitational_constant_d = 0.0001;
 
 using namespace entt::literals;
 
@@ -89,8 +89,8 @@ struct OrbitVizualiser {
                     // TODO: refactore this.
                     if (body.ref == other.ref) continue;
 
-                    const auto sqr_dist = glm::pow((body.position - other.position).length(), 2);
-                    const auto force_dir = glm::normalize(body.position - other.position);
+                    const auto sqr_dist = glm::pow((other.position - body.position).length(), 2);
+                    const auto force_dir = glm::normalize(other.position - body.position);
                     const auto force = force_dir * gravitational_constant_d * static_cast<double>(body.mass)
                                        * static_cast<double>(other.mass) / sqr_dist;
                     const auto acceleration = force / static_cast<double>(body.mass);
@@ -115,14 +115,24 @@ struct OrbitVizualiser {
         for (std::size_t i = 0; i < simulation_bodies.size(); ++i) {
             auto &component = world.get<OrbitVizualiser>(simulation_bodies[i].ref);
 
+            {
+                const kawe::Render::VAO *vao{nullptr};
+                if (vao = world.try_get<kawe::Render::VAO>(component.orbit_gizmo); !vao)
+                    kawe::Render::VAO::emplace(world, component.orbit_gizmo);
+            }
+
+            auto colors = std::vector<float>(simulation_bodies.size() * iterations, 1.f);
+
             kawe::Render::VBO<kawe::Render::VAO::Attribute::POSITION>::emplace(
                 world, component.orbit_gizmo, bodies_gizmos[i], 3);
+            kawe::Render::VBO<kawe::Render::VAO::Attribute::COLOR>::emplace(
+                world, component.orbit_gizmo, colors, 4);
 
             world.patch<kawe::Render::VAO>(component.orbit_gizmo, [](kawe::Render::VAO &vao) {
-                vao.mode = kawe::Render::VAO::DisplayMode::LINES;
+                vao.mode = kawe::Render::VAO::DisplayMode::LINE_STRIP;
             });
 
-            // world.emplace<kawe::FillColor>(component.orbit_gizmo, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
+            // world.emplace_or_replace<kawe::FillColor>(component.orbit_gizmo, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f});
         }
 
         spdlog::debug("finished computing iterations.");

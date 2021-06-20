@@ -52,7 +52,9 @@ public:
             static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
             / 1'000'000.0f;
 
-        for (const auto &body : m_Bodies)
+        for (const auto &body : m_Bodies) {
+            auto acceleration = glm::vec3(0.f);
+
             for (const auto &other : m_Bodies) {
                 // ! could break if id system change for an object.
                 // TODO: refactore this.
@@ -63,16 +65,18 @@ public:
                 const glm::vec3 other_position = m_World.get<kawe::Position3f>(other).component;
                 const auto other_mass = m_World.get<CelestialBody::MassF>(other).mass;
 
-                const auto sqr_dist = static_cast<float>(glm::pow((body_position - other_position).length(), 2));
-                const auto force_dir = glm::normalize(body_position - other_position);
+                const auto sqr_dist = static_cast<float>(glm::pow((other_position - body_position).length(), 2));
+                const auto force_dir = glm::normalize(other_position - body_position);
                 const auto force = force_dir * gravitational_constant * body_mass * other_mass / sqr_dist;
-                const auto acceleration = force / body_mass;
 
-                // updating the current body's velocity.
-                m_World.patch<kawe::Velocity3f>(body, [&acceleration, &dt_secs](auto &velocity) {
-                    velocity.component += acceleration * dt_secs;
-                });
+                acceleration += force / body_mass;
             }
+
+            // updating the current body's velocity.
+            m_World.patch<kawe::Velocity3f>(body, [&acceleration, &dt_secs](auto &velocity) {
+                velocity.component += acceleration * dt_secs;
+            });
+        }
     }
 
 private:
