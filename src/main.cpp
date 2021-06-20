@@ -21,18 +21,10 @@ int main()
         world.ctx<entt::dispatcher *>()->sink<kawe::event::TimeElapsed>().connect<&css::Universe::on_update_bodies>(
             universe.get());
 
-        // const auto map = world.create();
-        // world.emplace<kawe::Parent>(cube, map);
-        // world.get_or_emplace<kawe::Children>(map).component.push_back(cube);
-
         const auto player_id = world.create();
         world.emplace<kawe::Position3f>(player_id, glm::vec3{0, 10, 0});
         world.emplace<kawe::Collider>(player_id);
         world.emplace<kawe::Name>(player_id, "Player");
-
-        // creating a sphere and a line.
-        // create_sphere(world, 1, 10, 10);
-        create_line(world, glm::vec3(0.f, -50.f, 0.f), glm::vec3(0.f, 50.f, 0.f));
 
         player = std::make_shared<css::Player>(player_id, world);
         world.ctx<entt::dispatcher *>()
@@ -47,19 +39,22 @@ int main()
             glm::vec3(0.f),
             glm::vec3(0.f),
             0.01f,
-            100.f);
+            1000.f);
 
         [[maybe_unused]] auto asteroid = universe->add_body(
             "Asteroid",
-            "./asset/models/Asteroid_Small_6X.obj",
-            "./asset/textures/Aster_Small_1_Color.png",
+            "./asset/models/Earth.obj",
+            "./asset/textures/Planet_4K.jpg",
             glm::vec3(3.f, 0.f, 0.f),
-            glm::vec3(0.f, .1f, 0.f),
-            1);
+            glm::vec3(.2f, 0.f, .2f),
+            0.005f,
+            1.f);
 
-        auto debug = []() { spdlog::info("a second has passed ..."); };
+        css::CelestialBody::OrbitVizualiser::compute_n_iterations(*my_world, 100);
 
-        kawe::Clock::emplace(world, earth, std::chrono::milliseconds(1000), debug);
+        // kawe::Clock::emplace(*my_world, world.create(), 1000ms, [&my_world]() {
+        //     // running orbit simulation.
+        // });
     };
 
     engine.on_imgui = [&my_world]() {
@@ -72,6 +67,8 @@ int main()
 
         ImGui::End();
     };
+
+    // engine.render_internal_gui = false;
 
     engine.start();
 }

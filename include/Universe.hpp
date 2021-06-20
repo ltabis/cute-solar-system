@@ -37,7 +37,7 @@ public:
         m_World.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
         m_World.emplace<kawe::Position3f>(body_model, position);
         m_World.emplace<kawe::Velocity3f>(body_model, initial_velocity);
-        // CelestialBody::OrbitVizualiser::emplace(m_World, body_model, 10, std::chrono::milliseconds(1000));
+        CelestialBody::OrbitVizualiser::emplace(m_World, body_model);
         m_World.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
 
         m_Bodies.push_back(body_model);
@@ -49,30 +49,34 @@ public:
     {
         const auto dt_nano = e.world_time;
         const auto dt_secs =
-            static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
-            / 1'000'000.0;
+            static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(dt_nano).count())
+            / 1'000'000.0f;
 
-        for (const auto &body : m_Bodies)
+        for (const auto &body : m_Bodies) {
+            auto acceleration = glm::vec3(0.f);
+
             for (const auto &other : m_Bodies) {
                 // ! could break if id system change for an object.
                 // TODO: refactore this.
                 if (body == other) continue;
 
-                const auto body_position = m_World.get<kawe::Position3f>(body).component;
-                const auto body_mass = static_cast<double>(m_World.get<CelestialBody::MassF>(body).mass);
-                const auto other_position = m_World.get<kawe::Position3f>(other).component;
-                const auto other_mass = static_cast<double>(m_World.get<CelestialBody::MassF>(other).mass);
+                const glm::vec3 body_position = m_World.get<kawe::Position3f>(body).component;
+                const auto body_mass = m_World.get<CelestialBody::MassF>(body).mass;
+                const glm::vec3 other_position = m_World.get<kawe::Position3f>(other).component;
+                const auto other_mass = m_World.get<CelestialBody::MassF>(other).mass;
 
-                const auto sqr_dist = glm::pow((body_position - other_position).length(), 2);
-                const auto force_dir = glm::normalize(body_position - other_position);
+                const auto sqr_dist = static_cast<float>(glm::pow((other_position - body_position).length(), 2));
+                const auto force_dir = glm::normalize(other_position - body_position);
                 const auto force = force_dir * gravitational_constant * body_mass * other_mass / sqr_dist;
-                const auto acceleration = force / body_mass;
 
-                // updating the current body's velocity.
-                m_World.patch<kawe::Velocity3f>(body, [&acceleration, &dt_secs](auto &velocity) {
-                    velocity.component += acceleration * dt_secs;
-                });
+                acceleration += force / body_mass;
             }
+
+            // updating the current body's velocity.
+            m_World.patch<kawe::Velocity3f>(body, [&acceleration, &dt_secs](auto &velocity) {
+                velocity.component += acceleration * dt_secs;
+            });
+        }
     }
 
 private:
