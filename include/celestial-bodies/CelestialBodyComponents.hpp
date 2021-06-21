@@ -25,7 +25,7 @@ template<typename T>
 struct Size {
     static constexpr std::string_view name{"Size"};
 
-    std::size_t size;
+    float size;
 };
 
 using SizeF = Size<float>;

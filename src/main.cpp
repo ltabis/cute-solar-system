@@ -4,7 +4,7 @@
 #include "primitives/Line.hpp"
 #include "primitives/Sphere.hpp"
 
-#include "widgets/ComponentInspector.hpp"
+//#include "widgets/ComponentInspector.hpp"
 
 using CSSComponent = std::variant<
     std::monostate,
@@ -23,7 +23,7 @@ struct CuteSolarSystem {
     entt::registry *my_world = nullptr;
     std::shared_ptr<css::Universe> universe;
 
-    kawe::ComponentInspector inspector{};
+    //kawe::ComponentInspector inspector{};
 
     auto on_create(entt::registry &world) -> void
     {
@@ -39,19 +39,19 @@ struct CuteSolarSystem {
 
     auto create_object(CelestialObjectType type_selected)
     {
-        const auto get_texture = [](CelestialObjectType type) {
-            constexpr auto array_texture_planet = std::to_array({
-                "./asset/textures/Planet_4K.jpg",
-                "./asset/textures/00A-BG-PT2-Venus.jpg",
-                "./asset/textures/46k-venus-color-map-3d-model.jpg",
-                "./asset/textures/042667fb183134f3210a110971376c351cb21fa5.jpg",
-                "./asset/textures/d7pxfv4-6a44b369-8c61-41c8-937b-432f356e5ec7.png",
-                "./asset/textures/grass-green-earth-texture-wallpaper-preview.jpg",
-                "./asset/textures/images (1).jpeg",
-                "./asset/textures/images.jpeg",
-                "./asset/textures/Sedna.png",
-                "./asset/textures/unnamed.jpg",
-            });
+        const auto array_texture_planet = std::to_array<const char *>(
+            {"./asset/textures/Planet_4K.jpg",
+             "./asset/textures/00A-BG-PT2-Venus.jpg",
+             "./asset/textures/46k-venus-color-map-3d-model.jpg",
+             "./asset/textures/042667fb183134f3210a110971376c351cb21fa5.jpg",
+             "./asset/textures/d7pxfv4-6a44b369-8c61-41c8-937b-432f356e5ec7.png",
+             "./asset/textures/grass-green-earth-texture-wallpaper-preview.jpg",
+             "./asset/textures/images (1).jpeg",
+             "./asset/textures/images.jpeg",
+             "./asset/textures/Sedna.png",
+             "./asset/textures/unnamed.jpg"});
+
+        const auto get_texture = [&array_texture_planet](CelestialObjectType type) {
 
             switch (type) {
             // case CelestialObjectType::ASTEROID: return "./asset/textures/Aster_Small_1_Color.png";
@@ -150,7 +150,7 @@ struct CuteSolarSystem {
             }
         }
         ImGui::End();
-        inspector.draw<CSSComponent>(*my_world);
+        //inspector.draw<CSSComponent>(*my_world);
     }
 
 private:
