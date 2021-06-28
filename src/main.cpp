@@ -56,7 +56,7 @@ struct CuteSolarSystem {
             switch (type) {
             // case CelestialObjectType::ASTEROID: return "./asset/textures/Aster_Small_1_Color.png";
             case CelestialObjectType::PLANET:
-                return array_texture_planet[std::rand() % array_texture_planet.size()];
+                return array_texture_planet[static_cast<std::size_t>(std::rand()) % array_texture_planet.size()];
             case CelestialObjectType::STAR: return "./asset/textures/8k_sun.jpg";
             default: return "";
             }
@@ -83,9 +83,9 @@ struct CuteSolarSystem {
         const auto get_size = [](CelestialObjectType type) {
             switch (type) {
             // case CelestialObjectType::ASTEROID: return 1.0f;
-            case CelestialObjectType::PLANET: return 0.015f;
-            case CelestialObjectType::STAR: return 0.1f;
-            default: return 1.0f;
+            case CelestialObjectType::PLANET: return 0.015;
+            case CelestialObjectType::STAR: return 0.1;
+            default: return 1.0;
             }
         };
 
@@ -99,16 +99,17 @@ struct CuteSolarSystem {
                 static_cast<double>(std::rand() % 50) - 25.0),
             type_selected == CelestialObjectType::STAR ? glm::vec3(0.0f)
                                                        : glm::vec3(
-                                                           static_cast<double>(std::rand() % 10) / 10.0f - 0.5,
-                                                           static_cast<double>(std::rand() % 10) / 10.0f - 0.5,
-                                                           static_cast<double>(std::rand() % 10) / 10.0f - 0.5),
+                                                           static_cast<double>(std::rand() % 10) / 10.0 - 0.5,
+                                                           static_cast<double>(std::rand() % 10) / 10.0 - 0.5,
+                                                           static_cast<double>(std::rand() % 10) / 10.0 - 0.5),
             get_size(type_selected) * (std::rand() % 10 / 10.0 - 0.5),
             get_mass(type_selected));
         if (type_selected == CelestialObjectType::STAR) {
             my_world->emplace<kawe::PointLight>(object);
-            const auto &shaders = my_world->ctx<kawe::State *>()->shaders;
+            const auto &shaders = my_world->ctx<kawe::Context *>()->shaders;
             auto found = std::find_if(
                 shaders.begin(), shaders.end(), [](auto &i) { return i->getName() == "texture_2D_emissif"; });
+            assert(found != shaders.end());
             my_world->get<kawe::Render::VAO>(object).shader_program = found->get();
         }
     }
@@ -116,11 +117,11 @@ struct CuteSolarSystem {
     auto on_imgui() -> void
     {
         if (ImGui::Begin("Cute Solar System - Control Panel")) {
-            const auto &in = my_world->ctx<kawe::State *>()->clear_color;
+            const auto &in = my_world->ctx<kawe::Context *>()->clear_color;
             float temp[4] = {in.r, in.g, in.b, in.a};
 
             if (ImGui::ColorEdit4("clear color", temp))
-                my_world->ctx<kawe::State *>()->clear_color = {temp[0], temp[1], temp[2], temp[3]};
+                my_world->ctx<kawe::Context *>()->clear_color = {temp[0], temp[1], temp[2], temp[3]};
 
             ImGui::Separator();
 
@@ -195,8 +196,8 @@ private:
                     1.f);
         */
 
-        my_world->ctx<kawe::State *>()->clear_color = {0.2, 0.2, 0.2, 1.0};
-        css::CelestialBody::OrbitVizualiser::compute_n_iterations(*my_world, 100);
+        my_world->ctx<kawe::Context *>()->clear_color = {0.2, 0.2, 0.2, 1.0};
+        // css::CelestialBody::OrbitVizualiser::compute_n_iterations(*my_world, 100);
     }
 };
 

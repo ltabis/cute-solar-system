@@ -79,15 +79,18 @@
     },
     "cSpell.words": [
       "GLFW",
+      "Iconify",
       "Lenum",
       "Lsizei",
       "OPENGL",
+      "Wwindow",
       "dmat",
       "dvec",
       "entt",
       "glew",
       "guizmo",
       "imgui",
-      "kawe"
+      "kawe",
+      "nlohmann"
     ]
 }

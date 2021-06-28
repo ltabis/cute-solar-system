@@ -17,7 +17,7 @@ public:
         const std::string &texture_path = "",
         const glm::vec3 &position = glm::vec3(0.f),
         const glm::vec3 &initial_velocity = glm::vec3(0.f),
-        const float size = 1.f,
+        const double size = 1.f,
         const float mass = 1.f) -> entt::entity
     {
         auto body_model = m_World.create();
@@ -34,10 +34,10 @@ public:
         m_World.emplace<CelestialBody::MassF>(body_model, mass);
         m_World.emplace<CelestialBody::SizeF>(body_model, size);
         m_World.emplace<kawe::Name>(body_model, name);
-        m_World.emplace<kawe::Scale3f>(body_model, glm::vec3(size));
+        m_World.emplace<kawe::Scale3f>(body_model, glm::dvec3(size));
         m_World.emplace<kawe::Position3f>(body_model, position);
         m_World.emplace<kawe::Velocity3f>(body_model, initial_velocity);
-        CelestialBody::OrbitVizualiser::emplace(m_World, body_model);
+        // CelestialBody::OrbitVizualiser::emplace(m_World, body_model);
         m_World.emplace<entt::tag<"CelestialBody"_hs>>(body_model);
 
         m_Bodies.push_back(body_model);
