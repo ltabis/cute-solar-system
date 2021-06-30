@@ -114,7 +114,7 @@ struct CuteSolarSystem {
         }
     }
 
-    auto on_imgui() -> void
+    auto on_imgui(const kawe::action::Render<kawe::Render::Layout::UI> &) -> void
     {
         if (ImGui::Begin("Cute Solar System - Control Panel")) {
             const auto &in = my_world->ctx<kawe::Context *>()->clear_color;
@@ -171,6 +171,10 @@ private:
     auto on_create_safe() -> void
     {
         assert(my_world != nullptr);
+        my_world->ctx<entt::dispatcher *>()
+            ->sink<kawe::action::Render<kawe::Render::Layout::UI>>()
+            .connect<&CuteSolarSystem::on_imgui>(*this);
+
         my_world->on_update<kawe::Pickable>().connect<&CuteSolarSystem::on_object_pick>(*this);
 
         universe = std::make_shared<css::Universe>(*my_world);
@@ -206,13 +210,9 @@ int main()
     kawe::Engine engine{};
     CuteSolarSystem app{};
 
-    engine.on_create = [&app](entt::registry &world) {
+    // engine.render_internal_gui = false;
+    engine.start([&app](entt::registry &world) {
         std::srand(static_cast<std::uint32_t>(std::time(nullptr)));
         app.on_create(world);
-    };
-    engine.on_imgui = [&app] { app.on_imgui(); };
-
-    // engine.render_internal_gui = false;
-
-    engine.start();
+    });
 }
